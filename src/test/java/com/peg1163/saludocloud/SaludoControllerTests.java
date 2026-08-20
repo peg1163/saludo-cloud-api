@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 
 class SaludoControllerTests {
 
-	private final SaludoController controller = new SaludoController("Jaime ACuña");
+	private final SaludoController controller = new SaludoController("Estudiante de prueba");
 
 	@Test
 	void helloReturnsGreetingWithStudentName() {
-		assertEquals("Hola, soy Jaime ACuña", controller.hello());
+		assertEquals("Hola, soy Estudiante de prueba", controller.hello());
 	}
 
 	@Test
