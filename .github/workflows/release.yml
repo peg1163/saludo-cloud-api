@@ -17,6 +17,8 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      container_image: ${{ steps.reference.outputs.container_image }}
 
     steps:
       - name: Checkout
@@ -49,9 +51,40 @@ jobs:
             type=raw,value=latest
 
       - name: Build and publish
+        id: push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Record immutable image reference
+        id: reference
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/saludo-cloud
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Invalid image digest: $IMAGE_DIGEST" >&2
+            exit 1
+          fi
+
+          container_image="$IMAGE_NAME@$IMAGE_DIGEST"
+          echo "container_image=$container_image" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Published API image"
+            echo
+            echo "- API repository: \`${{ github.repository }}\`"
+            echo "- Immutable image: \`$container_image\`"
+            echo "- Next workflow: \`peg1163/saludo-cloud-iac/.github/workflows/image-contract.yml\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  iac-contract:
+    needs: publish
+    permissions:
+      contents: read
+    uses: peg1163/saludo-cloud-iac/.github/workflows/image-contract.yml@main
+    with:
+      container_image: ${{ needs.publish.outputs.container_image }}

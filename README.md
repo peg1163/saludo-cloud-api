@@ -43,3 +43,17 @@ Los cambios aceptados en `main` publican una imagen en GHCR con dos etiquetas:
 
 La infraestructura debe desplegar la referencia inmutable de la imagen, nunca
 depender solamente de `latest`.
+
+Después de publicar, el workflow obtiene el digest SHA-256 y llama al workflow
+reutilizable del repositorio `peg1163/saludo-cloud-iac`. La conexión queda
+registrada en GitHub Actions mediante este contrato:
+
+```text
+saludo-cloud-api
+    -> GHCR: ghcr.io/peg1163/saludo-cloud@sha256:<digest>
+    -> saludo-cloud-iac/.github/workflows/image-contract.yml
+    -> validación de Terraform
+```
+
+El workflow de IaC valida la referencia recibida, pero no despliega en Azure
+sin una aprobación separada de `terraform apply`.
